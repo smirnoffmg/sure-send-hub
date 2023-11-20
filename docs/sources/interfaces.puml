@@ -1,0 +1,46 @@
+@startuml Class interfaces
+enum Channel {
+    SMS
+    --
+    Rocket_Chat
+}
+
+enum MessageStatus {
+    created
+    --
+    queued
+    --
+    sent
+    --
+    received
+    --
+    failed
+}
+
+protocol IChannelManager {
+    {Channel} channel
+    {abstract} def get_provider(...)
+}
+
+protocol IProvider {
+    {str} title
+    {abstract} def is_active(...)
+    {abstract} def send_message(...)
+    {abstract} def get_message_status(...)
+}
+
+struct Message {
+    {str} id
+    {Channel} channel
+    {str} provider_title
+    {str} provider_inner_id
+    {str} sender
+    {str} receiver
+    {str} text
+
+    {MessageStatus} status
+    {str} fail_reason
+}
+
+
+@enduml
