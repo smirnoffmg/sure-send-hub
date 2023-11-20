@@ -1,0 +1,32 @@
+@startuml Send message request sequence
+autonumber
+
+actor User as user
+entity WebAPI as web
+database "Log Storage" as logs
+database DB as db
+queue "Task Queue" as queue
+
+user -> web: [http] `send message` reqiest
+web -> logs: Save request
+web <- logs: ACK
+web --> web: Check auth
+
+alt Auth is OK
+
+    web -> db: Save message
+    web <- db: New record id
+    web -> queue: Create new task with record id
+    web <- queue: ACK
+    user <- web: [http] Response with code 201 and record id
+
+else #Pink Auth is not OK
+
+    web -> logs: Save bad auth request
+    web <- logs: ACK
+    user <- web: [http] Response with code 401 and error message
+
+end
+
+
+@enduml

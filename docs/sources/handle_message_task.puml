@@ -1,0 +1,26 @@
+@startuml Handle message task sequence
+autonumber
+
+queue "Tasks Queue" as queue
+entity Worker as worker
+database "Log Storage" as logs
+database DB as db
+entity "Provider" as provider
+
+queue <- worker: Get next task and lock it
+queue -> worker: Returns task with record ID
+worker -> logs: Save "Start processing" event
+worker <- logs: ACK
+worker -> db: Get record with ID
+worker <- db: Returns record
+worker -> worker: Get provider instance using channel manager
+worker -> db: Update record, set status "In progress"
+worker <- db: ACK
+worker -> provider: Send message
+worker <- provider: Returns inner message ID from provider
+worker -> db: Update record, set status "At provider", set inner message ID
+worker <- db: ACK
+queue <- worker: Set task status "Done"
+queue <- worker: Creates task to check message delivery status
+queue -> worker: ACK
+@enduml

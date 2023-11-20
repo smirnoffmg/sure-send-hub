@@ -1,0 +1,39 @@
+@startuml Get message status sequence
+autonumber
+
+queue "Task Queue" as queue
+entity Worker as worker
+database "Log Storage" as logs
+database DB as db
+entity "Provider" as provider
+
+queue <- worker: Requests a task
+queue -> worker: Returns task with record ID
+worker -> logs: Saves event of task processing start
+worker <- logs: ACK
+worker -> db: Requests record with ID from task
+worker <- db: Returns record
+worker -> worker: Determines provider for sending from record
+worker -> provider: Requests message status
+note left
+Using internal 
+provider identifier from the record
+end note
+worker <- provider: Sends response
+
+alt Message delivered
+    worker -> logs: Saves event "message delivered"
+    worker <- logs: ACK
+    worker -> db: Updates record, indicating status "Delivered"
+    worker <- db: ACK
+else Message not delivered, problem on provider side
+    worker -> logs: Saves event "Message not delivered" with full provider response
+    worker <- logs: ACK
+    worker -> db: Updates record, indicating status "Not Delivered" and filling "Reason" field with full provider response
+    worker <- db: ACK
+end
+
+queue <- worker: Reports task completion
+queue -> worker: ACK
+
+@enduml
